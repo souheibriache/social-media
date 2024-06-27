@@ -1,7 +1,7 @@
 import RefreshToken from '@models/refresh-token';
+import { refreshTokenBodyValidation } from '@util/validation/validationSchema';
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { refreshTokenBodyValidation } from './validationSchema';
 
 const verifyRefreshToken = async (req: Request, res: Response, next: NextFunction) => {
   try {

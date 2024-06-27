@@ -1,18 +1,15 @@
 import User from '@models/users.schema';
-import { logInBodyValidation, signUpBodyValidation } from '@util/validationSchema';
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { generateTokens } from '@util/generateTokens';
+import { logInBodyValidation, signUpBodyValidation } from '@util/validation/validationSchema';
 require('dotenv');
 const SALT = process.env.SALT as string;
-const { ACCESS_TOKEN_PRIVATE_KEY: accessTokenPrivateKey } = process.env;
-const { REFRESH_TOKEN_PRIVATE_KEY: refreshTokenPrivateKey } = process.env;
 export const signup = async (req: Request, res: Response) => {
   try {
     const { error } = signUpBodyValidation(req.body);
     if (error) return res.status(400).json({ error: true, message: error.details[0].message });
     const user = await User.findOne({ email: req.body.email });
-    console.log(user);
     if (user)
       return res.status(400).json({
         error: true,

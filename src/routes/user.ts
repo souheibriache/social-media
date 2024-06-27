@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import userController from '@controllers/userController';
-import verifyAccessToken from '@util/verifyAccessToken';
-import validateSchema from '@util/validateSchema';
-import { createProfileValidation, updateProfileValidation } from '@util/validationSchema';
+import validateSchema from '@util/validation/validateSchema';
+import { createProfileValidation, updateProfileValidation } from '@util/validation/validationSchema';
 const router = Router();
 
 router.get('/', userController.get);

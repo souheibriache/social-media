@@ -1,6 +1,5 @@
-import { refreshTokenBodyValidation } from '@util/validationSchema';
 import RefreshToken from '@models/refresh-token';
-import verifyRefreshToken from '@util/verifyRefreshToken';
+import { refreshTokenBodyValidation } from '@util/validation/validationSchema';
 import { Request, Response, Router } from 'express';
 import jwt from 'jsonwebtoken';
 

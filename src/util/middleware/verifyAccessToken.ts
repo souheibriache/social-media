@@ -13,7 +13,6 @@ const verifyAccessToken = async (req: Request, res: Response, next: NextFunction
     await jwt.verify(token, ACCESS_TOKEN_PRIVATE_KEY, (err, tokenDetails) => {
       if (err) return res.status(401).json({ error: true, message: 'Unauthorized' });
       req.user = tokenDetails;
-      console.log({ tokenDetails });
       next();
     });
   } catch (err) {

@@ -18,7 +18,7 @@ import dbConnect from '@models/database';
 import authRouter from './routes/auth';
 import refreshTokenRouter from './routes/refreshToken';
 import profileRouter from './routes/user';
-import verifyAccessToken from '@util/verifyAccessToken';
+import verifyAccessToken from '@util/middleware/verifyAccessToken';
 
 // Load .env Enviroment Variables to process.env
 

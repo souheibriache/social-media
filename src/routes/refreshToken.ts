@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import refreshTokenController from '@controllers/refreshTokenController';
-import verifyRefreshToken from '@util/verifyRefreshToken';
+import verifyRefreshToken from '@util/middleware/verifyRefreshToken';
 
 const router = Router();
 
