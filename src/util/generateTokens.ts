@@ -1,15 +1,13 @@
-import RefreshToken from "@models/refresh-token";
-import { UsersType } from "@models/users.schema";
-import jwt from "jsonwebtoken";
+import RefreshToken from '@models/refresh-token';
+import { UsersType } from '@models/users.schema';
+import jwt from 'jsonwebtoken';
 
 type PayloadType = {
   _id: string;
   roles: string[];
 };
 
-export const generateTokens = async (
-  user: UsersType
-): Promise<{ accessToken: string; refreshToken: string }> => {
+export const generateTokens = async (user: UsersType): Promise<{ accessToken: string; refreshToken: string }> => {
   try {
     const { ACCESS_TOKEN_PRIVATE_KEY } = process.env;
     const { REFRESH_TOKEN_PRIVATE_KEY } = process.env;
@@ -19,10 +17,10 @@ export const generateTokens = async (
     };
 
     const accessToken: string = jwt.sign(payload, ACCESS_TOKEN_PRIVATE_KEY, {
-      expiresIn: "14m",
+      expiresIn: '14m',
     });
     const refreshToken: string = jwt.sign(payload, REFRESH_TOKEN_PRIVATE_KEY, {
-      expiresIn: "30d",
+      expiresIn: '30d',
     });
 
     const userToken = await RefreshToken.findOne({ userId: user._id });

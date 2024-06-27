@@ -1,10 +1,10 @@
-import { required } from "joi";
-import mongoose, { InferSchemaType } from "mongoose";
+import { required } from 'joi';
+import mongoose, { InferSchemaType } from 'mongoose';
 
 const profileSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: 'User',
   },
   dateOfBirth: {
     type: Date,
@@ -12,11 +12,11 @@ const profileSchema = new mongoose.Schema({
   },
   gender: {
     type: String,
-    enum: ["Male", "Female"],
-    default: "Male",
+    enum: ['Male', 'Female'],
+    default: 'Male',
   },
 });
 
-const Profile = mongoose.model("Profile", profileSchema);
+const Profile = mongoose.model('Profile', profileSchema);
 export type ProfileType = InferSchemaType<typeof profileSchema>;
 export default Profile;

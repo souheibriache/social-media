@@ -1,4 +1,4 @@
-import mongoose, { InferSchemaType } from "mongoose";
+import mongoose, { InferSchemaType } from 'mongoose';
 
 const usersSchema = new mongoose.Schema({
   _id: {
@@ -21,17 +21,17 @@ const usersSchema = new mongoose.Schema({
   },
   roles: {
     type: [String],
-    enum: ["user", "admin", "super_admin"],
-    default: ["user"],
+    enum: ['user', 'admin', 'super_admin'],
+    default: ['user'],
   },
   status: {
     type: String,
-    enum: ["active", "disactivated", "disabled"],
-    default: "active",
+    enum: ['active', 'disactivated', 'disabled'],
+    default: 'active',
   },
 });
 
-const User = mongoose.model("Users", usersSchema);
+const User = mongoose.model('Users', usersSchema);
 
 export type UsersType = InferSchemaType<typeof usersSchema>;
 

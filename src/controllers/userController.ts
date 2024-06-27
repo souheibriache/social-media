@@ -1,6 +1,6 @@
-import Profile from "@models/profile";
-import User from "@models/users.schema";
-import { Request, Response } from "express";
+import Profile from '@models/profile';
+import User from '@models/users.schema';
+import { Request, Response } from 'express';
 
 const get = async (req: Request, res: Response) => {
   try {
@@ -8,8 +8,7 @@ const get = async (req: Request, res: Response) => {
     if (!user) throw new Error();
     const profile = await Profile.findOne({ user: req.user._id });
     console.log({ user, profile });
-    if (!profile)
-      res.status(400).json({ error: true, message: "Profile not found" });
+    if (!profile) res.status(400).json({ error: true, message: 'Profile not found' });
 
     delete user.password;
 
@@ -24,19 +23,14 @@ const get = async (req: Request, res: Response) => {
       },
     });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ error: true, message: "Internal server error" });
+    return res.status(500).json({ error: true, message: 'Internal server error' });
   }
 };
 
 const create = async (req: Request, res: Response) => {
   try {
     const userProfile = await Profile.findOne({ user: req.user._id });
-    if (!!userProfile)
-      return res
-        .status(401)
-        .json({ error: true, message: "Profile already exists" });
+    if (!!userProfile) return res.status(401).json({ error: true, message: 'Profile already exists' });
 
     const profile = await new Profile({
       ...req.body,
@@ -44,12 +38,12 @@ const create = async (req: Request, res: Response) => {
     }).save();
     return res.status(200).json({
       error: false,
-      message: "Profile created successfully",
+      message: 'Profile created successfully',
       payload: { ...profile },
     });
   } catch (err) {
-    console.log("Internal server error: " + err);
-    res.status(500).json({ error: true, message: "Internal server error" });
+    console.log('Internal server error: ' + err);
+    res.status(500).json({ error: true, message: 'Internal server error' });
   }
 };
 

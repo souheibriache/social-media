@@ -1,36 +1,27 @@
-import RefreshToken from "@models/refresh-token";
-import { NextFunction, Request, Response } from "express";
-import jwt from "jsonwebtoken";
-import { refreshTokenBodyValidation } from "./validationSchema";
+import RefreshToken from '@models/refresh-token';
+import { NextFunction, Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+import { refreshTokenBodyValidation } from './validationSchema';
 
-const verifyRefreshToken = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const verifyRefreshToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const privateKey = process.env.REFRESH_TOKEN_PRIVATE_KEY;
     const { refreshToken } = req.body;
-    if (!refreshToken)
-      res.status(400).json({ error: true, message: "Invalid refresh token 1" });
+    if (!refreshToken) res.status(400).json({ error: true, message: 'Invalid refresh token 1' });
     const existingRefreshToken = await RefreshToken.findOne({
       token: refreshToken,
     });
 
     const { error } = refreshTokenBodyValidation(req.body);
-    if (error)
-      return res
-        .status(400)
-        .json({ error: true, message: error.details[0].message });
-    if (!existingRefreshToken)
-      res.status(400).json({ error: true, message: "Invalid refresh token 2" });
+    if (error) return res.status(400).json({ error: true, message: error.details[0].message });
+    if (!existingRefreshToken) res.status(400).json({ error: true, message: 'Invalid refresh token 2' });
 
     const jwtPayload = await jwt.verify(refreshToken, privateKey);
     req.user = jwtPayload;
     next();
   } catch (err) {
-    console.log("Internal server error: " + err);
-    res.status(500).json({ error: true, message: "Internal server error" });
+    console.log('Internal server error: ' + err);
+    res.status(500).json({ error: true, message: 'Internal server error' });
   }
 };
 export default verifyRefreshToken;
