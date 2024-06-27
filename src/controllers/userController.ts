@@ -4,14 +4,8 @@ import { Request, Response } from 'express';
 
 const get = async (req: Request, res: Response) => {
   try {
-    const user = await User.findOne({ _id: req.user._id });
-    if (!user) throw new Error();
-    const profile = await Profile.findOne({ user: req.user._id });
-    console.log({ user, profile });
-    if (!profile) res.status(400).json({ error: true, message: 'Profile not found' });
-
+    const { user, profile } = await findUserProfileOrFail(req.user._id);
     delete user.password;
-
     res.status(200).json({
       error: false,
       payload: {
@@ -47,4 +41,26 @@ const create = async (req: Request, res: Response) => {
   }
 };
 
-export default { get, create };
+const update = async (req: Request, res: Response) => {
+  try {
+    const { userName, ...updateProfileData } = req.body;
+    const { user, profile } = await findUserProfileOrFail(req.user._id);
+    if (userName) await User.updateOne({ _id: user._id }, { userName });
+    await Profile.updateOne({ user: user._id }, { ...updateProfileData });
+
+    res.status(200).json({ error: false, message: 'User profile updated successfully' });
+  } catch (err) {
+    console.log('Internal server error :' + err);
+    res.status(500).json({ error: true, message: 'Internal server error' });
+  }
+};
+
+const findUserProfileOrFail = async (userId: string) => {
+  const user = await User.findOne({ _id: userId });
+  if (!user) throw new Error('User not found');
+  const profile = await Profile.findOne({ user: userId });
+  if (!profile) throw new Error('Profile not found');
+  return { user, profile };
+};
+
+export default { get, create, update };

@@ -29,9 +29,24 @@ const refreshTokenBodyValidation = body => {
 const createProfileValidation = body => {
   const schema = Joi.object({
     dateOfBirth: Joi.date().required().label('Date of birth'),
-    gender: Joi.any().valid('Male', 'Female'),
+    gender: Joi.any().required().valid('Male', 'Female'),
   });
   return schema.validate(body);
 };
 
-export { signUpBodyValidation, logInBodyValidation, refreshTokenBodyValidation, createProfileValidation };
+const updateProfileValidation = body => {
+  const schema = Joi.object({
+    dateOfBirth: Joi.date().label('Date of birth'),
+    gender: Joi.any().valid('Male', 'Female'),
+    userName: Joi.string().label('User Name'),
+  });
+  return schema.validate(body);
+};
+
+export {
+  signUpBodyValidation,
+  logInBodyValidation,
+  refreshTokenBodyValidation,
+  createProfileValidation,
+  updateProfileValidation,
+};

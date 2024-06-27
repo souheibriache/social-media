@@ -2,10 +2,11 @@ import { Router } from 'express';
 import userController from '@controllers/userController';
 import verifyAccessToken from '@util/verifyAccessToken';
 import validateSchema from '@util/validateSchema';
-import { createProfileValidation } from '@util/validationSchema';
+import { createProfileValidation, updateProfileValidation } from '@util/validationSchema';
 const router = Router();
 
-router.get('/', verifyAccessToken, userController.get);
-router.post('/', verifyAccessToken, validateSchema(createProfileValidation), userController.create);
+router.get('/', userController.get);
+router.post('/', validateSchema(createProfileValidation), userController.create);
+router.put('/', validateSchema(updateProfileValidation), userController.update);
 
 export default router;
