@@ -2,6 +2,8 @@ import postController from '@controllers/postController';
 import postValidationSchema from '@util/validation/postValidationSchema';
 import validateSchema from '@util/validation/validateSchema';
 import { Router } from 'express';
+import commentsRouter from './comments';
+import reactionsRouter from './reactions';
 
 const router = Router();
 
@@ -11,17 +13,7 @@ router.get('/:postId', postController.getPostById);
 router.put('/:postId', validateSchema(postValidationSchema.updatePostValidationSchema), postController.updatePost);
 router.delete('/:postId');
 
-router.post(
-  '/:postId/comments',
-  validateSchema(postValidationSchema.postCommentValidationSchema),
-  postController.postComment
-);
-router.get('/:postId/comments', postController.getPostComments);
-router.get('/:postId/comments/:commentId', postController.getCommentById);
-router.delete('/:postId/comments/:commentId', postController.deleteComment);
-
-router.post('/:postId/reactions', validateSchema(postValidationSchema.reactionSchema), postController.createReaction);
-router.delete('/:postId/reactions', postController.deleteReaction);
-router.get('/:postId/reactions', postController.getPostReactions);
+router.use('/:postId/comments/', commentsRouter);
+router.use('/:postId/reactions/', reactionsRouter);
 
 export default router;
