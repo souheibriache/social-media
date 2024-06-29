@@ -18,6 +18,7 @@ import dbConnect from '@models/database';
 import authRouter from './routes/auth';
 import refreshTokenRouter from './routes/refreshToken';
 import profileRouter from './routes/user';
+import postRouter from './routes/post';
 import verifyAccessToken from '@util/middleware/verifyAccessToken';
 
 // Load .env Enviroment Variables to process.env
@@ -56,6 +57,7 @@ app.use('*', (req, res, next) => {
 app.use('/api', authRouter);
 app.use('/api/refreshToken', refreshTokenRouter);
 app.use('/api/profile', verifyAccessToken, profileRouter);
+app.use('/api/posts', verifyAccessToken, postRouter);
 // Handle errors
 app.use(errorHandler());
 

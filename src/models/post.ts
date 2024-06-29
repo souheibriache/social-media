@@ -1,9 +1,10 @@
-import mongoose, { mongo } from 'mongoose';
+import mongoose, { InferSchemaType, mongo } from 'mongoose';
 
 const commentsSchema = new mongoose.Schema({
   _id: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
+    auto: true,
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -18,18 +19,30 @@ const commentsSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  post: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post',
+  },
 });
 
 const reactionSchema = new mongoose.Schema({
   _id: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
+    auto: true,
   },
-
   type: {
     type: String,
     enum: ['like', 'love', 'haha', 'angry', 'sad'],
     default: 'like',
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  post: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post',
   },
 });
 
@@ -37,6 +50,7 @@ const postSchema = new mongoose.Schema({
   _id: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
+    auto: true,
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -52,7 +66,7 @@ const postSchema = new mongoose.Schema({
   },
   visibility: {
     type: String,
-    enum: ['only_me', 'followers', 'public'],
+    enum: ['only_me', 'friends', 'public'],
     default: 'friends',
   },
 
@@ -65,12 +79,10 @@ const postSchema = new mongoose.Schema({
   ],
 });
 
-const Post = mongoose.model('Post', postSchema);
-const Reaction = mongoose.model('Reaction', reactionSchema);
-const Comment = mongoose.model('Comment', commentsSchema);
+export type PostType = InferSchemaType<typeof postSchema>;
+export type CommentType = InferSchemaType<typeof commentsSchema>;
+export type ReactionType = InferSchemaType<typeof reactionSchema>;
 
-export default {
-  Post,
-  Reaction,
-  Comment,
-};
+export const Post = mongoose.model('Post', postSchema);
+export const Reaction = mongoose.model('Reaction', reactionSchema);
+export const Comment = mongoose.model('Comment', commentsSchema);

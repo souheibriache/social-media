@@ -17,7 +17,7 @@ export const generateTokens = async (user: UsersType): Promise<{ accessToken: st
     };
 
     const accessToken: string = jwt.sign(payload, ACCESS_TOKEN_PRIVATE_KEY, {
-      expiresIn: '14m',
+      expiresIn: '1h',
     });
     const refreshToken: string = jwt.sign(payload, REFRESH_TOKEN_PRIVATE_KEY, {
       expiresIn: '30d',
