@@ -4,6 +4,7 @@ const usersSchema = new mongoose.Schema({
   _id: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
+    auto: true,
     default: new mongoose.Types.ObjectId(),
   },
   userName: {

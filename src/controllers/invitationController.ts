@@ -81,12 +81,12 @@ const rejectInvitation = async (req: Request, res: Response) => {
 
 const getSentInvitations = async (req: Request, res: Response) => {
   const invitaitonsData = await getInvitation(req.user._id, 'sent');
-  return res.status(invitaitonsData.statusCode).json({ ...invitaitonsData.payload });
+  return res.status(invitaitonsData.statusCode).json({ ...invitaitonsData.data });
 };
 
 const getReceivedInvitations = async (req: Request, res: Response) => {
   const invitaitonsData = await getInvitation(req.user._id, 'received');
-  return res.status(invitaitonsData.statusCode).json({ ...invitaitonsData.payload });
+  return res.status(invitaitonsData.statusCode).json({ ...invitaitonsData.data });
 };
 
 const getInvitation = async (userId: string, invitationType: 'sent' | 'received') => {
@@ -102,11 +102,11 @@ const getInvitation = async (userId: string, invitationType: 'sent' | 'received'
       };
     let invitations =
       invitationType === 'sent'
-        ? await Invitation.find({ type: invitationType, sender: userId })
-        : Invitation.find({ type: invitationType, receiver: userId });
+        ? await Invitation.find({ status: 'pending', sender: userId }).populate('receiver')
+        : await Invitation.find({ status: 'pending', receiver: userId }).populate('sender');
     return {
       statusCode: 200,
-      payload: {
+      data: {
         error: false,
         message: 'Get Invitations Successfully!',
         payload: { invitations },
