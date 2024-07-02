@@ -1,4 +1,4 @@
-import mongoose, { InferSchemaType, mongo } from 'mongoose';
+import mongoose, { InferSchemaType } from 'mongoose';
 
 const commentsSchema = new mongoose.Schema({
   _id: {
@@ -8,7 +8,7 @@ const commentsSchema = new mongoose.Schema({
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'Users',
   },
   createdAt: {
     type: Date,
@@ -38,7 +38,7 @@ const reactionSchema = new mongoose.Schema({
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'Users',
   },
   post: {
     type: mongoose.Schema.Types.ObjectId,
@@ -54,7 +54,7 @@ const postSchema = new mongoose.Schema({
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'Users',
   },
   content: {
     type: String,
@@ -70,8 +70,18 @@ const postSchema = new mongoose.Schema({
     default: 'friends',
   },
 
-  reactions: [reactionSchema],
-  comments: [commentsSchema],
+  reactions: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Reaction',
+    },
+  ],
+  comments: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Comment',
+    },
+  ],
   images: [
     {
       type: String,
@@ -81,7 +91,7 @@ const postSchema = new mongoose.Schema({
 
 export type PostType = InferSchemaType<typeof postSchema>;
 export type CommentType = InferSchemaType<typeof commentsSchema>;
-export type ReactionType = InferSchemaType<typeof reactionSchema>;
+// export type ReactionType = InferSchemaType<typeof reactionSchema>;
 
 export const Post = mongoose.model('Post', postSchema);
 export const Reaction = mongoose.model('Reaction', reactionSchema);

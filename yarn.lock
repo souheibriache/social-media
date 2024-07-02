@@ -931,7 +931,7 @@ express-custom-error@^1.8.4:
   resolved "https://registry.yarnpkg.com/express-custom-error/-/express-custom-error-1.9.4.tgz#ebe5d6dbf9a2745d0ffacafb760d10a27ab1b0b5"
   integrity sha512-AzWx//X0NS8xL5YDy0gsFykW6/M/PVJxfWhpKX7wiYm5nuLZqTLI/LH2aUlBFMrJ8/XKBF689cVGiZsb2maqEw==
 
-express@^4.17.1:
+express@^4.5.0:
   version "4.19.2"
   resolved "https://registry.yarnpkg.com/express/-/express-4.19.2.tgz#e25437827a3aa7f2a827bc8171bbbb664a356465"
   integrity sha512-5T6nhjsT+EOMzuck8JjBHARTHfMht0POzlA60WV2pMD3gyXw2LZnZ+ueGdNxG+0calOJcWKbpFcuzLZ91YWq9Q==

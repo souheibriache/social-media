@@ -4,11 +4,12 @@ import { Request, Response } from 'express';
 const postComment = async (req: Request, res: Response) => {
   try {
     const postId = req.params.postId;
+    console.log({ postId, userId: req.user._id, params: req.params });
     const post: PostType = await Post.findOne({ _id: postId, user: req.user._id });
     if (!post) return res.status(404).json({ error: true, message: 'Post Not Found!' });
     console.log({ post });
     const comment = await new Comment({ ...req.body, post: postId, user: req.user._id }).save();
-
+    await Post.findByIdAndUpdate(postId, { $push: { comments: comment._id } });
     return res.status(200).json({ error: false, message: 'Comment created successfully', payload: { comment } });
   } catch (err) {
     console.log('Internal server error: ' + err);

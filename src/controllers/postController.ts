@@ -19,7 +19,7 @@ const getMyPosts = async (req: Request, res: Response) => {
     const pageSize = 10;
     const skip = (page - 1) * pageSize;
     const posts = await Post.find({ user: req.user._id })
-      .populate({ path: 'User' })
+      .populate({ path: 'comments' })
       .sort({ [sortOption]: 1 })
       .skip(skip)
       .limit(pageSize)
@@ -43,14 +43,27 @@ const getMyPosts = async (req: Request, res: Response) => {
     res.status(500).json({ error: true, message: 'Internal Server Error' });
   }
 };
-
 const getPostById = async (req: Request, res: Response) => {
   try {
     const postId = req.params.postId;
-    const post = await (
-      await Post.findOne({ _id: postId, user: req.user._id }).populate('comments')
-    ).populate('reactions');
+    const post = await Post.findOne({ _id: postId, user: req.user._id })
+      .populate({
+        path: 'comments',
+        populate: {
+          path: 'user',
+          select: 'userName email', // Adjust the fields you want to populate from the User schema
+        },
+      })
+      .populate({
+        path: 'reactions',
+        populate: {
+          path: 'user',
+          select: 'userName email', // Adjust the fields you want to populate from the User schema
+        },
+      });
+
     if (!post) return res.status(404).json({ error: true, message: 'Post Not Found!' });
+
     return res.status(200).json({ error: false, message: 'Get Post successfully', payload: { post } });
   } catch (err) {
     console.log('Internal server error: ' + err);
