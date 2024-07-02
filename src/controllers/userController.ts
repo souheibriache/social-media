@@ -63,4 +63,37 @@ const findUserProfileOrFail = async (userId: string) => {
   return { user, profile };
 };
 
-export default { get, create, update };
+const getAll = async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const pageSize = 10;
+    let query: any = {};
+    const skip = (page - 1) * pageSize;
+    const searchQuery = (req.query.search as string) || '';
+    if (searchQuery) {
+      const searchRegex = new RegExp(searchQuery, 'i');
+      query['userName'] = searchRegex;
+    }
+
+    const users = await User.find(query).skip(skip).limit(pageSize).lean();
+    const total = await User.countDocuments(query);
+    const response = {
+      error: false,
+      message: 'Get my posts successfully',
+      payload: {
+        data: users,
+        pagination: {
+          total,
+          page,
+          pages: Math.ceil(total / pageSize),
+        },
+      },
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    console.log('Internal Server Error: ' + err);
+    return res.status(500).json({ error: true, message: 'Internal Server Error' });
+  }
+};
+
+export default { get, create, update, getAll };

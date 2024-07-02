@@ -7,5 +7,6 @@ const router = Router();
 router.get('/', userController.get);
 router.post('/', validateSchema(createProfileValidation), userController.create);
 router.put('/', validateSchema(updateProfileValidation), userController.update);
+router.get('/search', userController.getAll);
 
 export default router;
