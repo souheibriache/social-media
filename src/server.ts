@@ -21,6 +21,9 @@ import profileRouter from './routes/user';
 import postRouter from './routes/post';
 import invitationRouter from './routes/invitation';
 import verifyAccessToken from '@util/middleware/verifyAccessToken';
+import http from 'http';
+import { Server } from 'socket.io';
+import socketVerifyAccessToken from '@util/middleware/verifyWsAccessToken';
 
 // Load .env Enviroment Variables to process.env
 
@@ -69,5 +72,34 @@ app.use('*', (req, res) => {
 });
 
 // Open Server on configurated Port
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+});
+
+io.use(socketVerifyAccessToken);
+
+io.on('connection', socket => {
+  console.log('A user connected: ', socket.id);
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected: ', socket.id);
+  });
+
+  socket.on('send_message', message => {
+    // Handle the message here
+    // Broadcast the message to other users
+    console.log({ message });
+    socket.broadcast.emit('receive_message', message);
+  });
+});
+
+server.listen(3002, () => {
+  console.info('Server listening on port ', 3002);
+});
 
 app.listen(PORT, () => console.info('Server listening on port ', PORT));
