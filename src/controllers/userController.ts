@@ -1,3 +1,4 @@
+import { Invitation } from '@models/invitation';
 import Profile from '@models/profile';
 import User from '@models/users.schema';
 import { Request, Response } from 'express';
@@ -5,6 +6,15 @@ import { Request, Response } from 'express';
 const get = async (req: Request, res: Response) => {
   try {
     const { user, profile } = await findUserProfileOrFail(req.user._id);
+    if (!profile)
+      return res.status(200).json({
+        error: false,
+        payload: {
+          userName: user.userName,
+          email: user.email,
+          userId: user._id,
+        },
+      });
     delete user.password;
     res.status(200).json({
       error: false,
@@ -14,9 +24,11 @@ const get = async (req: Request, res: Response) => {
         userId: user._id,
         gender: profile.gender,
         dateOfBirth: profile.dateOfBirth,
+        picture: profile.picture,
       },
     });
   } catch (err) {
+    console.log('Internal server error: ' + err);
     return res.status(500).json({ error: true, message: 'Internal server error' });
   }
 };
@@ -30,6 +42,9 @@ const create = async (req: Request, res: Response) => {
       ...req.body,
       user: req.user._id,
     }).save();
+    let user = await User.findById(req.user._id);
+    user.profile = profile.id;
+    await user.save();
     return res.status(200).json({
       error: false,
       message: 'Profile created successfully',
@@ -43,14 +58,36 @@ const create = async (req: Request, res: Response) => {
 
 const update = async (req: Request, res: Response) => {
   try {
-    const { userName, ...updateProfileData } = req.body;
-    const { user, profile } = await findUserProfileOrFail(req.user._id);
-    if (userName) await User.updateOne({ _id: user._id }, { userName });
-    await Profile.updateOne({ user: user._id }, { ...updateProfileData });
+    const { userName, ...profileData } = req.body;
 
-    res.status(200).json({ error: false, message: 'User profile updated successfully' });
+    const user = await User.findById(req.user._id).populate('profile');
+    if (!user) return res.status(404).json({ error: true, message: 'User not found' });
+
+    // Update the user's profile
+    if (userName) user.userName = userName;
+
+    if (profileData) {
+      const updatedProfile = await Profile.findOne({ user: { _id: req.user._id } });
+      if (profileData.dateOfBirth) updatedProfile.dateOfBirth = profileData.dateOfBirth;
+      if (profileData.gender) updatedProfile.gender = profileData.gender;
+
+      // Handle the profile picture if uploaded
+      if (req.file) {
+        const pictureUrl = `/uploads/${req.file.filename}`;
+        updatedProfile.picture = pictureUrl;
+      }
+
+      await updatedProfile.save();
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      error: false,
+      message: 'User profile updated successfully',
+    });
   } catch (err) {
-    console.log('Internal server error :' + err);
+    console.error('Internal server error:', err);
     res.status(500).json({ error: true, message: 'Internal server error' });
   }
 };
@@ -59,29 +96,71 @@ const findUserProfileOrFail = async (userId: string) => {
   const user = await User.findOne({ _id: userId });
   if (!user) throw new Error('User not found');
   const profile = await Profile.findOne({ user: userId });
-  if (!profile) throw new Error('Profile not found');
+  if (!profile) return { user, profile: null };
   return { user, profile };
 };
 
 const getAll = async (req: Request, res: Response) => {
   try {
+    const currentUserId = req.user._id; // Assuming you have the current user's ID stored here
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = 10;
-    let query: any = {};
     const skip = (page - 1) * pageSize;
     const searchQuery = (req.query.search as string) || '';
+    let query: any = {};
+
+    // Exclude the current user from the query results
+    query._id = { $ne: currentUserId };
+
     if (searchQuery) {
       const searchRegex = new RegExp(searchQuery, 'i');
       query['userName'] = searchRegex;
     }
 
-    const users = await User.find(query).skip(skip).limit(pageSize).lean();
+    // Fetch users
+    const users = await User.find(query).select('-password').populate('profile').skip(skip).limit(pageSize).lean();
+
+    // Add invitationStatus for each user
+    const usersWithStatus = await Promise.all(
+      users.map(async user => {
+        const invitations = await Invitation.find({
+          $or: [
+            { sender: currentUserId, receiver: user._id },
+            { sender: user._id, receiver: currentUserId },
+          ],
+        });
+
+        let invitationStatus = 'none';
+
+        if (invitations.length) {
+          if (invitations.some(invitation => invitation.status === 'accepted')) {
+            invitationStatus = 'friends';
+          } else if (invitations.some(invitation => invitation.status === 'pending')) {
+            const invitation = invitations.find(
+              invitation => invitation.sender.equals(currentUserId) && invitation.status === 'pending'
+            );
+            if (invitation) {
+              invitationStatus = 'invitationSent';
+            } else {
+              invitationStatus = 'invitationReceived';
+            }
+          }
+        }
+
+        return {
+          ...user,
+          invitationStatus,
+        };
+      })
+    );
+
     const total = await User.countDocuments(query);
+
     const response = {
       error: false,
-      message: 'Get my posts successfully',
+      message: 'Get users successfully',
       payload: {
-        data: users,
+        data: usersWithStatus,
         pagination: {
           total,
           page,
@@ -89,11 +168,51 @@ const getAll = async (req: Request, res: Response) => {
         },
       },
     };
+
     res.status(200).json(response);
   } catch (err) {
-    console.log('Internal Server Error: ' + err);
-    return res.status(500).json({ error: true, message: 'Internal Server Error' });
+    console.error('Internal Server Error:', err);
+    res.status(500).json({ error: true, message: 'Internal Server Error' });
   }
 };
 
-export default { get, create, update, getAll };
+const getOneById = async (req: Request, res: Response) => {
+  try {
+    const currentUserId = req.user._id;
+    const userId = req.params.userId;
+    const user = await User.findOne({ _id: userId }).populate('profile').lean();
+    if (!user) return res.status(404).json({ error: true, message: 'User not found' });
+
+    const invitations = await Invitation.find({
+      $or: [
+        { sender: currentUserId, receiver: user._id },
+        { sender: user._id, receiver: currentUserId },
+      ],
+    });
+
+    let invitationStatus = 'none';
+
+    if (invitations.length) {
+      if (invitations.some(invitation => invitation.status === 'accepted')) {
+        invitationStatus = 'friends';
+      } else if (invitations.some(invitation => invitation.status === 'pending')) {
+        const invitation = invitations.find(
+          invitation => invitation.sender.equals(currentUserId) && invitation.status === 'pending'
+        );
+        if (invitation) {
+          invitationStatus = 'invitationSent';
+        } else {
+          invitationStatus = 'invitationReceived';
+        }
+      }
+    }
+    return res
+      .status(200)
+      .json({ error: false, message: 'Get user successfully', payload: { ...user, invitationStatus } });
+  } catch (err) {
+    console.error('Internal Server Error:', err);
+    res.status(500).json({ error: true, message: 'Internal Server Error' });
+  }
+};
+
+export default { get, create, update, getAll, getOneById };

@@ -6,8 +6,8 @@ import jwt from 'jsonwebtoken';
 const refreshToken = async (req: Request, res: Response) => {
   try {
     const privateKey = process.env.REFRESH_TOKEN_PRIVATE_KEY;
-    const payload = { _id: req.user._id, roles: req.user.roles };
-    const accessToken = jwt.sign(payload, privateKey, { expiresIn: '14m' });
+    const payload = { _id: req.user._id, roles: req.user.roles, hasProfile: req.user.hasProfile };
+    const accessToken = jwt.sign(payload, privateKey, { expiresIn: '1h' });
 
     res.status(200).json({
       error: false,

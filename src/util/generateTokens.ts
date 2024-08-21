@@ -5,15 +5,20 @@ import jwt from 'jsonwebtoken';
 type PayloadType = {
   _id: string;
   roles: string[];
+  hasProfile: boolean;
 };
 
-export const generateTokens = async (user: UsersType): Promise<{ accessToken: string; refreshToken: string }> => {
+export const generateTokens = async (
+  user: UsersType,
+  hasProfile: any
+): Promise<{ accessToken: string; refreshToken: string }> => {
   try {
     const { ACCESS_TOKEN_PRIVATE_KEY } = process.env;
     const { REFRESH_TOKEN_PRIVATE_KEY } = process.env;
     const payload: PayloadType = {
       _id: user._id.toString(),
       roles: user.roles,
+      hasProfile,
     };
 
     const accessToken: string = jwt.sign(payload, ACCESS_TOKEN_PRIVATE_KEY, {

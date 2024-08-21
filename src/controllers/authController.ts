@@ -35,13 +35,15 @@ const login = async (req: Request, res: Response) => {
 
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).populate('profile');
     if (!user) return res.status(401).json({ error: true, message: 'Invalid Email or Password' });
 
     const verifiedPassword = await compare(password, user.password);
-    if (!verifiedPassword) res.status(401).json({ error: true, messahe: 'Invalid Email or Password' });
+    if (!verifiedPassword) res.status(401).json({ error: true, message: 'Invalid Email or Password' });
 
-    const { accessToken, refreshToken } = await generateTokens(user);
+    const hasProfile = !!user.profile;
+
+    const { accessToken, refreshToken } = await generateTokens(user, hasProfile);
     res.status(200).json({
       error: false,
       accessToken,

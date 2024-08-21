@@ -5,7 +5,6 @@ const usersSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     auto: true,
-    default: new mongoose.Types.ObjectId(),
   },
   userName: {
     type: String,
@@ -30,9 +29,19 @@ const usersSchema = new mongoose.Schema({
     enum: ['active', 'disactivated', 'disabled'],
     default: 'active',
   },
+  profile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Profile', // Reference to the Profile model
+  },
+
+  socket: {
+    type: String,
+    required: false,
+    default: null,
+  },
 });
 
-const User = mongoose.model('Users', usersSchema);
+const User = mongoose.model('User', usersSchema);
 
 export type UsersType = InferSchemaType<typeof usersSchema>;
 

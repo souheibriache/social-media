@@ -36,10 +36,12 @@ const createProfileValidation = body => {
 
 const updateProfileValidation = body => {
   const schema = Joi.object({
-    dateOfBirth: Joi.date().label('Date of birth'),
-    gender: Joi.any().valid('Male', 'Female'),
     userName: Joi.string().label('User Name'),
+    dateOfBirth: Joi.date().label('Date of Birth'),
+    gender: Joi.string().valid('Male', 'Female').label('Gender'),
+    picture: Joi.string().label('Profile Picture URL'),
   });
+
   return schema.validate(body);
 };
 
