@@ -15,6 +15,10 @@ const profileSchema = new mongoose.Schema({
     enum: ['Male', 'Female'],
     default: 'Male',
   },
+  picture: {
+    type: String,
+    required: false,
+  },
 });
 
 const Profile = mongoose.model('Profile', profileSchema);

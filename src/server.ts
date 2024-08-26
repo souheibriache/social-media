@@ -21,9 +21,11 @@ import profileRouter from './routes/user';
 import postRouter from './routes/post';
 import invitationRouter from './routes/invitation';
 import verifyAccessToken from '@util/middleware/verifyAccessToken';
+import chatRouter from './routes/chat';
 import http from 'http';
-import { Server } from 'socket.io';
-import socketVerifyAccessToken from '@util/middleware/verifyWsAccessToken';
+import path from 'path';
+import { Server as SocketIOServer } from 'socket.io';
+import { Chat, IChat, Message } from '@models/chat';
 
 // Load .env Enviroment Variables to process.env
 
@@ -50,6 +52,7 @@ app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(cors());
 app.use(helmet());
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // This middleware adds the json header to every response
 app.use('*', (req, res, next) => {
@@ -63,6 +66,7 @@ app.use('/api/refreshToken', refreshTokenRouter);
 app.use('/api/profile', verifyAccessToken, profileRouter);
 app.use('/api/posts', verifyAccessToken, postRouter);
 app.use('/api/invitations', verifyAccessToken, invitationRouter);
+app.use('/api/chat', verifyAccessToken, chatRouter);
 // Handle errors
 app.use(errorHandler());
 
@@ -72,9 +76,13 @@ app.use('*', (req, res) => {
 });
 
 // Open Server on configurated Port
+import { socketVerifyAccessToken } from '@util/middleware/socketVerifyToken';
+import mongoose from 'mongoose';
+import User from '@models/users.schema';
 
+// const channel = connectRabbitMQ();
 const server = http.createServer(app);
-const io = new Server(server, {
+const io = new SocketIOServer(server, {
   cors: {
     origin: '*',
     methods: ['GET', 'POST'],
@@ -83,23 +91,80 @@ const io = new Server(server, {
 
 io.use(socketVerifyAccessToken);
 
-io.on('connection', socket => {
-  console.log('A user connected: ', socket.id);
+io.on('connection', async socket => {
+  console.log('User connected:', socket.user._id);
+  await User.updateOne({ _id: socket.user._id }, { socket: socket.id });
+  socket.join(socket.user._id);
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected: ', socket.id);
+  // Send a message
+  socket.on('send_message', async data => {
+    try {
+      const { recipientId, content } = JSON.parse(data);
+      let chat: IChat;
+      const existingChat = await Chat.findOne({ participants: { $all: [recipientId, socket.user._id] } }).populate(
+        'messages'
+      );
+      if (existingChat) chat = existingChat;
+      else {
+        const newChat = new Chat({ participants: [socket.user._id, recipientId] });
+        chat = await newChat.save();
+      }
+
+      const newMessage = new Message({
+        content,
+        sender: socket.user._id,
+        chat: chat._id,
+      });
+      await newMessage.save();
+      const consolelogChat = await Chat.findById(chat._id).populate({
+        path: 'messages',
+        select: 'content',
+      });
+
+      chat.messages.push(newMessage._id as mongoose.Types.ObjectId);
+      await chat.save();
+      const message = await Message.findById(newMessage._id).populate({
+        path: 'sender',
+        select: 'userName profile',
+        populate: {
+          path: 'profile',
+          select: 'dateOfBirth gender picture', // Populate the profile fields you need
+        },
+      });
+      socket.in([recipientId]).emit('new_message', message);
+
+      socket.emit('message_sent', message);
+    } catch (error) {
+      console.error('Socket error :', error);
+    }
+
+    // Publish the message to RabbitMQ
+    // await channel.sendToQueue('chat_messages', Buffer.from(JSON.stringify({ chatId, messageId: newMessage._id })));
   });
 
-  socket.on('send_message', message => {
-    // Handle the message here
-    // Broadcast the message to other users
-    console.log({ message });
-    socket.broadcast.emit('receive_message', message);
+  socket.on('see_messages', async data => {
+    try {
+      const { chatId } = JSON.parse(data);
+      const chat: any = await Chat.findOne({ _id: chatId }).populate('participants');
+      if (!chat) throw new Error('Chat not found!');
+      await Message.updateMany(
+        { chat: chatId, sender: { $ne: socket.user._id }, seenAt: null },
+        { seenAt: new Date() }
+      );
+      const newChatMessages = await Message.find({ chat: chatId });
+      const receiverId = chat.participants.find(partisipant => partisipant._id !== socket.user._id)._id.toString();
+      socket.in(receiverId).emit('update_messages', newChatMessages);
+    } catch (error) {
+      console.log('Socket error :', error);
+    }
+  });
+
+  socket.on('disconnect', async () => {
+    console.log('User disconnected:', socket.user._id);
+    await User.updateOne({ _id: socket.user._id }, { socket: null });
+    socket.leave(socket.user._id);
   });
 });
-
-server.listen(3002, () => {
-  console.info('Server listening on port ', 3002);
-});
+server.listen(3003, () => console.info('Socket listening on port ', 3003));
 
 app.listen(PORT, () => console.info('Server listening on port ', PORT));

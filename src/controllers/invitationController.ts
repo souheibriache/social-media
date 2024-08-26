@@ -23,14 +23,21 @@ const sendInvitation = async (req: Request, res: Response) => {
 
 const cancelInvitation = async (req: Request, res: Response) => {
   try {
-    const invitationId = req.params.invitationId;
+    const receivedId = req.params.userId;
     const invitation = await Invitation.findOne({
-      id: invitationId,
       sender: req.user._id,
+      receiver: receivedId,
       $or: [{ status: 'pending' }, { status: 'accepted' }],
     });
     if (!invitation) return res.status(404).json({ error: true, message: 'Invitation Not Found!' });
-    await Invitation.findOneAndUpdate({ _id: invitationId }, { status: 'cancelled' });
+    await Invitation.updateMany(
+      {
+        sender: req.user._id,
+        receiver: receivedId,
+        $or: [{ status: 'pending' }, { status: 'accepted' }],
+      },
+      { status: 'cancelled' }
+    );
     res.status(200).json({ error: false, message: 'Invitation Cancelled Successfully!' });
   } catch (err) {
     console.log('Internal Server Error: ' + err);
@@ -40,11 +47,18 @@ const cancelInvitation = async (req: Request, res: Response) => {
 
 const unfriendUser = async (req: Request, res: Response) => {
   try {
-    const receiverId = req.params.userId;
-    const receiver = await User.findOne({ _id: receiverId });
+    const userId = req.params.userId;
+    const receiver = await User.findOne({ _id: userId });
     if (!receiver) res.status(404).json({ error: true, message: 'User Not Found!' });
 
-    const invitation = await Invitation.findOne({ sender: req.user._id, receiver: receiverId, status: 'accepted' });
+    const invitation = await Invitation.findOne({
+      $or: [
+        { sender: req.user._id, receiver: userId },
+        { sender: userId, receiver: req.user._id },
+      ],
+      status: 'accepted',
+    });
+
     if (!invitation) return res.status(404).json({ error: true, message: 'Invitation Not Found!' });
     await Invitation.findOneAndUpdate({ _id: invitation._id }, { status: 'cancelled' });
     return res.status(200).json({ error: false, message: 'User Unfriended Successfully!' });
@@ -55,8 +69,8 @@ const unfriendUser = async (req: Request, res: Response) => {
 };
 const acceptInvitation = async (req: Request, res: Response) => {
   try {
-    const invitationId = req.params.invitationId;
-    const invitation = await Invitation.findOne({ _id: invitationId, status: 'pending', receiver: req.user._id });
+    const userId = req.params.userId;
+    const invitation = await Invitation.findOne({ status: 'pending', receiver: req.user._id, sender: userId });
     if (!invitation) return res.status(404).json({ error: true, message: 'Invitation Not Found!' });
     await Invitation.findOneAndUpdate({ _id: invitation._id }, { status: 'accepted' });
     return res.status(200).json({ error: false, message: 'Invitation Accepted Successfully!' });
@@ -68,8 +82,8 @@ const acceptInvitation = async (req: Request, res: Response) => {
 
 const rejectInvitation = async (req: Request, res: Response) => {
   try {
-    const invitationId = req.params.invitationId;
-    const invitation = await Invitation.findOne({ _id: invitationId, status: 'pending', receiver: req.user._id });
+    const userId = req.params.userId;
+    const invitation = await Invitation.findOne({ status: 'pending', receiver: req.user._id, sender: userId });
     if (!invitation) return res.status(404).json({ error: true, message: 'Invitation Not Found!' });
     await Invitation.findOneAndUpdate({ _id: invitation._id }, { status: 'rejected' });
     return res.status(200).json({ error: false, message: 'Invitation Rejected Successfully!' });
