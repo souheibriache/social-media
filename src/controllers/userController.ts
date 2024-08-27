@@ -15,6 +15,8 @@ const get = async (req: Request, res: Response) => {
           userId: user._id,
         },
       });
+    console.log({ user, profile });
+
     delete user.password;
     res.status(200).json({
       error: false,
@@ -22,9 +24,9 @@ const get = async (req: Request, res: Response) => {
         userName: user.userName,
         email: user.email,
         userId: user._id,
-        gender: profile.gender,
-        dateOfBirth: profile.dateOfBirth,
-        picture: profile.picture,
+        gender: profile?.gender,
+        dateOfBirth: profile?.dateOfBirth,
+        picture: profile?.picture,
       },
     });
   } catch (err) {
