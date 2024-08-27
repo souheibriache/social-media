@@ -38,22 +38,30 @@ const get = async (req: Request, res: Response) => {
 const create = async (req: Request, res: Response) => {
   try {
     const userProfile = await Profile.findOne({ user: req.user._id });
-    if (!!userProfile) return res.status(401).json({ error: true, message: 'Profile already exists' });
+    if (userProfile) return res.status(401).json({ error: true, message: 'Profile already exists' });
 
-    const profile = await new Profile({
+    const profileData = {
       ...req.body,
       user: req.user._id,
-    }).save();
-    let user = await User.findById(req.user._id);
+    };
+
+    if (req.file) {
+      const pictureUrl = `/uploads/${req.file.filename}`;
+      profileData.picture = pictureUrl;
+    }
+
+    const profile = await new Profile(profileData).save();
+    const user = await User.findById(req.user._id);
     user.profile = profile.id;
     await user.save();
+
     return res.status(200).json({
       error: false,
       message: 'Profile created successfully',
-      payload: { ...profile },
+      payload: profile,
     });
   } catch (err) {
-    console.log('Internal server error: ' + err);
+    console.error('Internal server error: ', err);
     res.status(500).json({ error: true, message: 'Internal server error' });
   }
 };

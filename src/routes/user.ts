@@ -27,8 +27,8 @@ const upload = multer({ storage: storage });
 const router = Router();
 router.get('/', userController.get);
 router.get('/users/:userId', userController.getOneById);
-router.post('/', validateSchema(createProfileValidation), upload.single(), userController.create);
-router.put('/', validateSchema(updateProfileValidation), upload.single('picture'), userController.update);
+router.post('/', upload.single('picture'), validateSchema(createProfileValidation), userController.create);
+router.put('/', upload.single('picture'), validateSchema(updateProfileValidation), userController.update);
 router.get('/search', userController.getAll);
 
 export default router;
