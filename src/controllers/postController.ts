@@ -1,10 +1,17 @@
-import { Comment, Post, PostType, Reaction } from '@models/post';
+import { Invitation } from '@models/invitation';
+import { Post } from '@models/post';
 import { Request, Response } from 'express';
 
 const createPost = async (req: Request, res: Response) => {
   try {
-    console.log({ ...req.body });
     const post = await new Post({ ...req.body, user: req.user._id }).save();
+    if (req.files) {
+      for (const file of req.files) {
+        const pictureUrl = `/uploads/${file.filename}`;
+        post.images.push(pictureUrl);
+      }
+    }
+    await post.save();
     res.status(200).json({ error: false, message: 'Post created successfully', payload: { post } });
   } catch (err) {
     console.log('Internal server error: ' + err);
@@ -85,9 +92,97 @@ const updatePost = async (req: Request, res: Response) => {
   }
 };
 
+const getUserFeed = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user._id;
+    const page = parseInt(req.query.page as string) || 1;
+    const pageSize = 10;
+    const skip = (page - 1) * pageSize;
+
+    const acceptedInvitations = await Invitation.find({
+      $or: [
+        { sender: { _id: userId }, status: 'accepted' },
+        { receiver: { _id: userId }, status: 'accepted' },
+      ],
+    }).select('sender receiver -_id');
+    const friendIds = acceptedInvitations.map(invitation =>
+      invitation.sender.toString() === userId.toString() ? invitation.receiver : invitation.sender
+    );
+
+    const posts = await Post.find({
+      $or: [
+        { user: { _id: userId } },
+        { user: { $in: friendIds }, visibility: { $in: ['friends', 'public'] } }, // Friends' posts
+        { visibility: 'public' },
+      ],
+    })
+      .populate({
+        path: 'user',
+        select: 'userName _id',
+        populate: {
+          path: 'profile',
+          select: 'picture email',
+        },
+      })
+      .populate({
+        path: 'comments',
+        select: 'createdAt',
+        populate: {
+          path: 'user',
+          select: '_id userName',
+          populate: {
+            path: 'profile',
+            select: 'picture',
+          },
+        },
+      })
+      .populate({
+        path: 'reactions',
+        select: 'type ',
+        populate: {
+          path: 'user',
+          select: '_id userName',
+          populate: {
+            path: 'profile',
+            select: 'picture',
+          },
+        },
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(pageSize)
+      .lean();
+    const totalPosts = await Post.countDocuments({
+      $or: [
+        { user: userId },
+        { user: { $in: friendIds }, visibility: { $in: ['friends', 'public'] } },
+        { visibility: 'public' },
+      ],
+    });
+
+    const response = {
+      error: false,
+      message: 'User feed fetched successfully',
+      payload: {
+        data: posts,
+        pagination: {
+          total: totalPosts,
+          page,
+          pages: Math.ceil(totalPosts / pageSize),
+        },
+      },
+    };
+
+    res.status(200).json(response);
+  } catch (err) {
+    console.log('Internal server error:', err);
+    res.status(500).json({ error: true, message: 'Error getting user feed' });
+  }
+};
 export default {
   createPost,
   getMyPosts,
   getPostById,
   updatePost,
+  getUserFeed,
 };

@@ -45,8 +45,8 @@ const create = async (req: Request, res: Response) => {
       user: req.user._id,
     };
 
-    if (req.file) {
-      const pictureUrl = `/uploads/${req.file.filename}`;
+    if (req.files) {
+      const pictureUrl = `/uploads/${req.files[0].filename}`;
       profileData.picture = pictureUrl;
     }
 
@@ -82,8 +82,8 @@ const update = async (req: Request, res: Response) => {
       if (profileData.gender) updatedProfile.gender = profileData.gender;
 
       // Handle the profile picture if uploaded
-      if (req.file) {
-        const pictureUrl = `/uploads/${req.file.filename}`;
+      if (req.files) {
+        const pictureUrl = `/uploads/${req.files[0].filename}`;
         updatedProfile.picture = pictureUrl;
       }
 

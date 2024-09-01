@@ -8,7 +8,7 @@ const commentsSchema = new mongoose.Schema({
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Users',
+    ref: 'User',
   },
   createdAt: {
     type: Date,
@@ -33,12 +33,12 @@ const reactionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['like', 'love', 'haha', 'angry', 'sad'],
+    enum: ['like', 'love', 'haha', 'angry', 'unlike'],
     default: 'like',
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Users',
+    ref: 'User',
   },
   post: {
     type: mongoose.Schema.Types.ObjectId,
@@ -54,7 +54,7 @@ const postSchema = new mongoose.Schema({
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Users',
+    ref: 'User',
   },
   content: {
     type: String,

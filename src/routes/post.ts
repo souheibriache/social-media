@@ -4,10 +4,16 @@ import validateSchema from '@util/validation/validateSchema';
 import { Router } from 'express';
 import commentsRouter from './comments';
 import reactionsRouter from './reactions';
+import { upload } from '@util/upload';
 
 const router = Router();
 
-router.post('/', validateSchema(postValidationSchema.createPostValidationSchema), postController.createPost);
+router.post(
+  '/',
+  upload.array('pictures'),
+  validateSchema(postValidationSchema.createPostValidationSchema),
+  postController.createPost
+);
 router.get('/', postController.getMyPosts);
 router.get('/:postId', postController.getPostById);
 router.put('/:postId', validateSchema(postValidationSchema.updatePostValidationSchema), postController.updatePost);

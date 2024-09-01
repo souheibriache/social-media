@@ -22,6 +22,7 @@ import postRouter from './routes/post';
 import invitationRouter from './routes/invitation';
 import verifyAccessToken from '@util/middleware/verifyAccessToken';
 import chatRouter from './routes/chat';
+import feedRouter from './routes/feed';
 import http from 'http';
 import path from 'path';
 import { Server as SocketIOServer } from 'socket.io';
@@ -67,6 +68,7 @@ app.use('/api/profile', verifyAccessToken, profileRouter);
 app.use('/api/posts', verifyAccessToken, postRouter);
 app.use('/api/invitations', verifyAccessToken, invitationRouter);
 app.use('/api/chat', verifyAccessToken, chatRouter);
+app.use('/api/feed', verifyAccessToken, feedRouter);
 // Handle errors
 app.use(errorHandler());
 

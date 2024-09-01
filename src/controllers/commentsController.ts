@@ -10,7 +10,11 @@ const postComment = async (req: Request, res: Response) => {
     console.log({ post });
     const comment = await new Comment({ ...req.body, post: postId, user: req.user._id }).save();
     await Post.findByIdAndUpdate(postId, { $push: { comments: comment._id } });
-    return res.status(200).json({ error: false, message: 'Comment created successfully', payload: { comment } });
+
+    const newComment = await Comment.findById(comment._id)
+      .populate({ path: 'user', populate: { path: 'profile' } })
+      .lean();
+    return res.status(200).json({ error: false, message: 'Comment created successfully', payload: { ...newComment } });
   } catch (err) {
     console.log('Internal server error: ' + err);
     res.status(500).json({ error: true, message: 'Internal Server Error' });
