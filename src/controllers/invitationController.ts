@@ -103,6 +103,57 @@ const getReceivedInvitations = async (req: Request, res: Response) => {
   return res.status(invitaitonsData.statusCode).json({ ...invitaitonsData.data });
 };
 
+const getFriends = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user._id;
+    const user = await User.findOne({ _id: userId });
+    if (!user)
+      return {
+        statusCode: 404,
+        payload: {
+          message: 'User Not Found!',
+          error: true,
+        },
+      };
+    let invitations = await Invitation.find({
+      $or: [
+        { status: 'accepted', sender: userId },
+        { status: 'accepted', receiver: userId },
+      ],
+    })
+      .populate({
+        path: 'sender',
+        select: 'userName _id',
+        populate: {
+          path: 'profile',
+          select: 'picture',
+        },
+      })
+      .populate({
+        path: 'receiver',
+        select: 'userName _id',
+        populate: {
+          path: 'profile',
+          select: 'picture',
+        },
+      });
+    let friends = invitations.map(invitation => {
+      return invitation.sender._id.toString() === user._id.toString() ? invitation.receiver : invitation.sender;
+    });
+
+    return res.status(200).json({ error: false, message: 'Get friends successfully', payload: friends });
+  } catch (err) {
+    console.log('Internal Server Error: ' + err);
+    return {
+      statusCode: 500,
+      payload: {
+        error: true,
+        message: 'Internal server Error',
+      },
+    };
+  }
+};
+
 const getInvitation = async (userId: string, invitationType: 'sent' | 'received') => {
   try {
     const user = await User.findOne({ _id: userId });
@@ -116,8 +167,22 @@ const getInvitation = async (userId: string, invitationType: 'sent' | 'received'
       };
     let invitations =
       invitationType === 'sent'
-        ? await Invitation.find({ status: 'pending', sender: userId }).populate('receiver')
-        : await Invitation.find({ status: 'pending', receiver: userId }).populate('sender');
+        ? await Invitation.find({ status: 'pending', sender: userId }).populate({
+            path: 'receiver',
+            select: 'userName _id',
+            populate: {
+              path: 'profile',
+              select: 'picture',
+            },
+          })
+        : await Invitation.find({ status: 'pending', receiver: userId }).populate({
+            path: 'sender',
+            select: 'userName _id',
+            populate: {
+              path: 'profile',
+              select: 'picture',
+            },
+          });
     return {
       statusCode: 200,
       data: {
@@ -145,4 +210,5 @@ export default {
   unfriendUser,
   getSentInvitations,
   getReceivedInvitations,
+  getFriends,
 };

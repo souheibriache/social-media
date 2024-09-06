@@ -15,7 +15,6 @@ const get = async (req: Request, res: Response) => {
           userId: user._id,
         },
       });
-    console.log({ user, profile });
 
     delete user.password;
     res.status(200).json({

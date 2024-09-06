@@ -8,12 +8,12 @@ const invitationSchema = new mongoose.Schema({
   },
   sender: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Users',
+    ref: 'User',
   },
 
   receiver: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Users',
+    ref: 'User',
   },
 
   status: {

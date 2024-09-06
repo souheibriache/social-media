@@ -10,5 +10,6 @@ router.put('/:userId/accept', invitationController.acceptInvitation);
 router.put('/:userId/reject', invitationController.rejectInvitation);
 router.get('/sent', invitationController.getSentInvitations);
 router.get('/received', invitationController.getReceivedInvitations);
+router.get('/friends', invitationController.getFriends);
 
 export default router;

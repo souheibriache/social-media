@@ -12,7 +12,7 @@ const dbConnect = (dbUri: string) => {
   });
 
   mongoose.connection.on('disconnected', () => {
-    console.log('Mongodb Connection disconnected');
+    console.log('Database disconnected');
   });
 };
 

@@ -4,10 +4,8 @@ import { Request, Response } from 'express';
 const postComment = async (req: Request, res: Response) => {
   try {
     const postId = req.params.postId;
-    console.log({ postId, userId: req.user._id, params: req.params });
     const post: PostType = await Post.findOne({ _id: postId });
     if (!post) return res.status(404).json({ error: true, message: 'Post Not Found!' });
-    console.log({ post });
     const comment = await new Comment({ ...req.body, post: postId, user: req.user._id }).save();
     await Post.findByIdAndUpdate(postId, { $push: { comments: comment._id } });
 
@@ -42,7 +40,6 @@ const getPostComments = async (req: Request, res: Response) => {
       .limit(pageSize)
       .lean();
     const unfilteredComments = await Comment.find({ post: postId });
-    console.log({ comments, unfilteredComments });
     const total = await Comment.countDocuments({ post: postId });
     const response = {
       error: false,
