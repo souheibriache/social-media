@@ -36,7 +36,7 @@ const deleteReaction = async (req: Request, res: Response) => {
 const getPostReactions = async (req: Request, res: Response) => {
   try {
     const { postId } = req.params;
-    const post = await Post.findOne({ _id: postId, user: req.user._id });
+    const post = await Post.findOne({ _id: postId });
     if (!post) return res.status(404).json({ error: true, message: 'Post Not Found!' });
     console.log({ postId, post });
     const reactions = await Reaction.find({ post: postId });

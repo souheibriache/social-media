@@ -12,7 +12,15 @@ const createPost = async (req: Request, res: Response) => {
       }
     }
     await post.save();
-    res.status(200).json({ error: false, message: 'Post created successfully', payload: { post } });
+    const newPost = await Post.findById(post._id).populate({
+      path: 'user',
+      select: 'userName',
+      populate: {
+        path: 'profile',
+        select: 'picture',
+      },
+    });
+    res.status(200).json({ error: false, message: 'Post created successfully', payload: { post: newPost } });
   } catch (err) {
     console.log('Internal server error: ' + err);
     res.status(500).json({ error: true, message: 'Internal Server Error' });
@@ -126,7 +134,7 @@ const getUserFeed = async (req: Request, res: Response) => {
       })
       .populate({
         path: 'comments',
-        select: 'createdAt',
+        select: 'createdAt content',
         populate: {
           path: 'user',
           select: '_id userName',

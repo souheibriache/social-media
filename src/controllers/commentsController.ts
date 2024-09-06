@@ -5,7 +5,7 @@ const postComment = async (req: Request, res: Response) => {
   try {
     const postId = req.params.postId;
     console.log({ postId, userId: req.user._id, params: req.params });
-    const post: PostType = await Post.findOne({ _id: postId, user: req.user._id });
+    const post: PostType = await Post.findOne({ _id: postId });
     if (!post) return res.status(404).json({ error: true, message: 'Post Not Found!' });
     console.log({ post });
     const comment = await new Comment({ ...req.body, post: postId, user: req.user._id }).save();
@@ -29,6 +29,14 @@ const getPostComments = async (req: Request, res: Response) => {
     const skip = (page - 1) * pageSize;
     const postId = req.params.postId;
     const comments = await Comment.find({ post: postId })
+      .populate({
+        path: 'user',
+        select: 'userName _id',
+        populate: {
+          path: 'profile',
+          select: 'picture',
+        },
+      })
       .sort({ [sortOption]: 1 })
       .skip(skip)
       .limit(pageSize)
