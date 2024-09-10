@@ -118,10 +118,6 @@ io.on('connection', async socket => {
         chat: chat._id,
       });
       await newMessage.save();
-      const consolelogChat = await Chat.findById(chat._id).populate({
-        path: 'messages',
-        select: 'content',
-      });
 
       chat.messages.push(newMessage._id as mongoose.Types.ObjectId);
       await chat.save();
@@ -135,6 +131,7 @@ io.on('connection', async socket => {
       });
       socket.in([recipientId]).emit('new_message', message);
 
+      socket.in([socket.user._id]).emit('message_sent', message);
       socket.emit('message_sent', message);
     } catch (error) {
       console.error('Socket error :', error);
@@ -147,17 +144,36 @@ io.on('connection', async socket => {
   socket.on('see_messages', async data => {
     try {
       const { chatId } = JSON.parse(data);
-      const chat: any = await Chat.findOne({ _id: chatId }).populate('participants');
+      const chat = await Chat.findOne({ _id: chatId }).populate('participants');
       if (!chat) throw new Error('Chat not found!');
+
+      // Update the `seenAt` field for all unseen messages
       await Message.updateMany(
         { chat: chatId, sender: { $ne: socket.user._id }, seenAt: null },
         { seenAt: new Date() }
       );
-      const newChatMessages = await Message.find({ chat: chatId });
-      const receiverId = chat.participants.find(partisipant => partisipant._id !== socket.user._id)._id.toString();
-      socket.in(receiverId).emit('update_messages', newChatMessages);
+
+      // Fetch the updated messages
+      const updatedMessages = await Message.find({ chat: chatId })
+        .populate({
+          path: 'sender',
+          select: 'userName profile',
+          populate: {
+            path: 'profile',
+            select: 'dateOfBirth gender picture',
+          },
+        })
+        .sort({ timestamp: -1 })
+        .exec();
+
+      const lastMessage = updatedMessages[0];
+
+      // Notify the last message's seen status
+      socket.emit('message_seen', lastMessage);
+      const participants = chat.participants.map(participant => participant._id.toString());
+      socket.in(participants).emit('message_seen', lastMessage);
     } catch (error) {
-      console.log('Socket error :', error);
+      console.log('Socket error:', error);
     }
   });
 

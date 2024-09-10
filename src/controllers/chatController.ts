@@ -26,25 +26,38 @@ export const getMyChats = async (req: Request, res: Response) => {
   try {
     const userId = req.user._id;
 
-    const chats = await Chat.find({ participants: { $in: [userId] } })
+    const chats = await Chat.find({ participants: { $in: [userId] }, 'messages.0': { $exists: true } })
       .populate({
         path: 'participants',
-        select: 'userName profile',
+        select: 'userName profile _id',
         populate: {
           path: 'profile',
-          select: 'dateOfBirth gender picture',
+          select: 'picture',
         },
       })
       .populate({
         path: 'messages',
-        options: { sort: { timestamp: -1 }, limit: 1 },
+        options: { sort: { timestamp: -1 } },
+        populate: {
+          path: 'sender',
+          select: '_id userName',
+        },
       })
       .sort({ 'messages.timestamp': -1 })
       .exec();
 
+    const data = chats.map(chat => {
+      return {
+        recipient: chat.participants.find(participant => participant._id.toString() !== userId),
+        lastMessage: chat.messages[0],
+        _id: chat._id,
+      };
+    });
+
     return res.status(200).json({
+      message: 'Chats fetched successfully',
       error: false,
-      data: chats,
+      data,
     });
   } catch (error) {
     console.log('Internal server error :', error);
@@ -75,10 +88,11 @@ export const getChatById = async (req: Request, res: Response) => {
           select: 'userName profile',
           populate: {
             path: 'profile',
-            select: 'dateOfBirth gender picture',
+            select: 'picture',
           },
         },
       })
+      .sort({ timestamp: -1 })
       .exec();
 
     if (!chat) {
@@ -87,10 +101,15 @@ export const getChatById = async (req: Request, res: Response) => {
         message: 'Chat not found',
       });
     }
-
+    const data = {
+      _id: chat.id,
+      messages: chat.messages,
+      recipient: chat.participants.find((partisipant: any) => partisipant._id.toString() !== req.user._id),
+    };
     return res.status(200).json({
       error: false,
-      data: chat,
+      message: 'Chat fetched successfully',
+      data,
     });
   } catch (error) {
     console.log('Internal server error :', error);
