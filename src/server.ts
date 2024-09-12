@@ -130,6 +130,7 @@ io.on('connection', async socket => {
         },
       });
       socket.in([recipientId]).emit('new_message', message);
+      socket.in([recipientId]).emit('typing', { chatId: chat._id, typing: false });
 
       socket.in([socket.user._id]).emit('message_sent', message);
       socket.emit('message_sent', message);
@@ -174,6 +175,21 @@ io.on('connection', async socket => {
       socket.in(participants).emit('message_seen', lastMessage);
     } catch (error) {
       console.log('Socket error:', error);
+    }
+  });
+
+  socket.on('typing', async data => {
+    try {
+      const { chatId, typing } = JSON.parse(data);
+      const chat = await Chat.findById(chatId).select('participants');
+      if (!chat) throw new Error('Chat not found');
+      const currentUser = await User.findById(socket.user._id).populate('profile');
+      const participants = chat.participants
+        .filter(participantId => participantId.toString() !== socket.user._id)
+        .map(participantId => participantId.toString());
+      socket.in(participants).emit('typing', { chatId, typing, currentUser });
+    } catch (error) {
+      console.error(error);
     }
   });
 
