@@ -75,25 +75,29 @@ const update = async (req: Request, res: Response) => {
     // Update the user's profile
     if (userName) user.userName = userName;
 
-    if (profileData) {
+    console.log({ reqFiles: req.file });
+    if (profileData || req.file) {
       const updatedProfile = await Profile.findOne({ user: { _id: req.user._id } });
       if (profileData.dateOfBirth) updatedProfile.dateOfBirth = profileData.dateOfBirth;
       if (profileData.gender) updatedProfile.gender = profileData.gender;
 
       // Handle the profile picture if uploaded
-      if (req.files) {
-        const pictureUrl = `/uploads/${req.files[0].filename}`;
+      if (req.file) {
+        const pictureUrl = `/uploads/${req.file.filename}`;
         updatedProfile.picture = pictureUrl;
+        console.log({ updatedProfile });
       }
 
       await updatedProfile.save();
     }
 
     await user.save();
-
+    const newUser = await User.findById(user._id).populate('profile');
+    console.log({ newUser });
     return res.status(200).json({
       error: false,
       message: 'User profile updated successfully',
+      payload: { user: newUser },
     });
   } catch (err) {
     console.error('Internal server error:', err);
