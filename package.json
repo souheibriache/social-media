@@ -6,7 +6,7 @@
   "scripts": {
     "setup": "npm install && npm update",
     "tsc": "tsc",
-    "build": "yarn install && npx tsc",
+    "build": "npm install && npx tsc",
     "start": "node build/server.js",
     "dev": "ts-node-dev --respawn --transpile-only ./src/server.ts",
     "prod": "tsc && node ./build/src/server.js",
